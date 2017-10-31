@@ -227,7 +227,7 @@ from pixiedust.display import *
 display(df_station_info)
 ```
 
-<p align="left"><img src="resources/architecture.png" width="500"></p>
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/mapbox.png" width="500"></p>
 
 ### Explore - Station status (Animated Table)
 You can display your real-time system data from the IBM Message Hub in a animated table. The data will updated continously and will stop after 20 seconds. You can change the duration time of the animation with the parameter `timeout`.
