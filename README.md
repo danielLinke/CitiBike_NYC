@@ -531,7 +531,7 @@ jersey = ax.add_patch(PolygonPatch(district_jersey[1]['geometry'], fc=GREEN, ec=
 mplleaflet.display(fig=f)
 ```
 
-<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/geomap1.png" width="800"></p>
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/geomap.png" width="800"></p>
 
 #### Heat Map - Available Bikes
 The following heat map shows the availibilty of bikes for each bike station.
