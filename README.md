@@ -27,7 +27,7 @@ This notebook contains the following parts:
 2.	[Produce real-time data into IBM Message Hub](#2-produce-real-time-data-into-ibm-message-hub)
 3.	[Consume real-time data from IBM Message Hub](#3-consume-real-time-data-from-ibm-message-hub)
 4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](#4-explore-transform-and-analyze-real-time-data-with-ibm-data-science-experience)
-5.	[Visualization of real-time system data](#visualization)
+5.	[Visualization of real-time system data](#5-visualization-of-real-time-system-data)
 6.  [Summary and next steps](#summary)
 
 ## 1 IBM Message Hub service
@@ -460,3 +460,158 @@ for msg in consumer:
         break
 df_corr
 ```
+
+### 5 Visualization of real-time system data
+In this section, you will learn how to visualize heat maps of real-time system data. You will using the python library `mplleaflet` to create geo maps with [OpenStreetMap](https://www.openstreetmap.org/about). Through the maps, you get a better insight of the capacity, availibilty and utilization of the bike station depending on the station location.
+
+#### Load GeoJson Districts
+Download the different districts of New York and Jersey as geojson maps. You will embedded the geojson files in the following mplleaflet maps.
+
+```
+import geojson
+from descartes import PolygonPatch
+import matplotlib.pyplot as plt
+import numpy as np
+
+#GeoMaps for district in NYC and Jersey
+!wget -q 'https://data.cityofnewyork.us/api/geospatial/tqmj-j8zm?method=export&format=GeoJSON' -O district_nyc.geojson
+!wget -q 'http://catalog.civicdashboards.com/dataset/9c9c69f3-42f3-4f1e-bdb3-d68bba2ebfd2/resource/657066c7-051e-4606-802f-0ca92d5a18bc/download/aeda17dbe956493a826a2c8b025d67a0njcountypolygonv2.geojson' -O district_jersey.geojson
+
+#Read GeoJson files
+with open('district_nyc.geojson') as json_file:
+    geojson_nyc = geojson.load(json_file)
+    
+with open('district_jersey.geojson') as json_file:
+    geojson_jersey = geojson.load(json_file)
+    
+#Define district information and colors
+district_nyc = geojson_nyc['features']
+district_jersey = geojson_jersey['features']
+BLUE = '#6699cc'
+GREEN = '#7FFF7F'
+RED = '#EC3B00'
+YELLOW = '#FFF400'
+BLACK = '#000000'
+CYAN = '#00FFDF'
+ORANGE = '#FFA500'
+```
+
+#### GeoMap - Capacity
+The following map shows the capacity for each bike station. Station with a high capacity over 40 are green. Station with a capacity between 20 and 40 are yellow. All stations with a low capcity under 20 bikes are red. In the map you can recoginze, bike stations with a low capacity are mostly in Jersey City or on the outskirts of New York City. On the contrary the stations with a high capcity are predominated in the district Manhatten.
+
+```
+%matplotlib inline
+import mplleaflet
+import matplotlib.pyplot as plt
+from descartes import PolygonPatch
+
+#Set display size for output
+plt.rcParams["figure.figsize"] = [15, 8]
+     
+#Define stations according to the capacity
+df_low = df_station_info[df_station_info['capacity'] <= 20] #Stations with low capacity
+df_middle = df_station_info[df_station_info['capacity'].between(20, 40, inclusive=False)] #Stations with middle capacity 
+df_high = df_station_info[df_station_info['capacity'] >= 40] #Stations with high capacity          
+
+#Plot capacity stations
+f, ax = plt.subplots()                            
+plt.plot(df_low['lon'], df_low['lat'], 'rs', label='Line 3')  # Red squares for stations with low capacity
+plt.plot(df_middle['lon'], df_middle['lat'], 'ys', label='Line 2') # Yellow squares for stations with middle capacity
+plt.plot(df_high['lon'], df_high['lat'], 'gs', label='Line 1') # Green squares for stations with high capacity
+
+#Plot districts
+queens = ax.add_patch(PolygonPatch(district_nyc[0]['geometry'], fc=CYAN, ec=BLACK, alpha=0.5, zorder=2))
+#statenIsland = ax.add_patch(PolygonPatch(district_nyc[1]['geometry'], fc=ORANGE, ec=BLACK, alpha=1, zorder=2))
+#bronx = ax.add_patch(PolygonPatch(district_nyc[2]['geometry'], fc=BLUE, ec=BLACK, alpha=1, zorder=2))
+brooklyn = ax.add_patch(PolygonPatch(district_nyc[3]['geometry'], fc=YELLOW, ec=BLACK, alpha=1, zorder=2))
+manhatten = ax.add_patch(PolygonPatch(district_nyc[4]['geometry'], fc=RED, ec=BLACK, alpha=1, zorder=2))
+jersey = ax.add_patch(PolygonPatch(district_jersey[1]['geometry'], fc=GREEN, ec=BLACK, alpha=1, zorder=2))
+
+#Show map
+mplleaflet.display(fig=f)
+```
+
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/geomap1.png" width="800"></p>
+
+#### Heat Map - Available Bikes
+The following heat map shows the availibilty of bikes for each bike station.
+
+```
+%matplotlib inline
+import mplleaflet
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
+#Set display size for output
+plt.rcParams["figure.figsize"] = [15, 8]
+
+#Consume data from IBM Message Hub
+for msg in consumer:              
+    if msg.topic == 'citibike':      
+        df_station_status = pd.DataFrame(_getJSONfromKafka(msg))
+        df_station_status = df_station_status.set_index('station_id')
+        
+        #Merge data
+        df = pd.merge(df_station_data, df_station_status, how='inner', left_index=True, right_index=True)
+                                               
+        #Plot availibilty stations                                    
+        f, ax = plt.subplots()
+        plt.scatter(x=df['lon'], y=df['lat'], c=df['num_bikes_available'], s=100+(100/(df['num_bikes_available']+1)), cmap=cm.get_cmap('hsv'), edgecolor='None')           
+        
+        #Plot districts
+        queens = ax.add_patch(PolygonPatch(district_nyc[0]['geometry'], fc=CYAN, ec=BLACK, alpha=0.5, zorder=2))
+        #statenIsland = ax.add_patch(PolygonPatch(district_nyc[1]['geometry'], fc=ORANGE, ec=BLACK, alpha=1, zorder=2))
+        #bronx = ax.add_patch(PolygonPatch(district_nyc[2]['geometry'], fc=BLUE, ec=BLACK, alpha=1, zorder=2))
+        brooklyn = ax.add_patch(PolygonPatch(district_nyc[3]['geometry'], fc=YELLOW, ec=BLACK, alpha=1, zorder=2))
+        manhatten = ax.add_patch(PolygonPatch(district_nyc[4]['geometry'], fc=RED, ec=BLACK, alpha=1, zorder=2))
+        jersey = ax.add_patch(PolygonPatch(district_jersey[1]['geometry'], fc=GREEN, ec=BLACK, alpha=1, zorder=2))
+               
+        break;
+mplleaflet.display(fig=f)
+```
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/heatmap1.png" width="800"></p>
+
+#### HeatMap - Utilization
+The following heat map shows the utilization for each bike station.
+
+```
+%matplotlib inline
+import mplleaflet
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
+#Set display size for output
+plt.rcParams["figure.figsize"] = [15, 8]
+
+#Consume data from IBM Message Hub
+for msg in consumer:              
+    if msg.topic == 'citibike':      
+        df_station_status = pd.DataFrame(_getJSONfromKafka(msg))
+        df_station_status = df_station_status.set_index('station_id')
+        
+        #Merge data
+        df = pd.merge(df_station_data, df_station_status, how='inner', left_index=True, right_index=True)
+        df['utilization'] = (df.num_bikes_available / df.capacity)*100      
+        
+        #Plot data                                    
+        f, ax = plt.subplots()
+        plt.scatter(x=df['lon'], y=df['lat'], c=df['utilization'], s=df['utilization']*5, cmap=cm.get_cmap('coolwarm'), edgecolor='None')         
+        
+        #Plot districts
+        queens = ax.add_patch(PolygonPatch(district_nyc[0]['geometry'], fc=CYAN, ec=BLACK, alpha=0.5, zorder=2))
+        #statenIsland = ax.add_patch(PolygonPatch(district_nyc[1]['geometry'], fc=ORANGE, ec=BLACK, alpha=1, zorder=2))
+        #bronx = ax.add_patch(PolygonPatch(district_nyc[2]['geometry'], fc=BLUE, ec=BLACK, alpha=1, zorder=2))
+        brooklyn = ax.add_patch(PolygonPatch(district_nyc[3]['geometry'], fc=YELLOW, ec=BLACK, alpha=1, zorder=2))
+        manhatten = ax.add_patch(PolygonPatch(district_nyc[4]['geometry'], fc=RED, ec=BLACK, alpha=1, zorder=2))
+        jersey = ax.add_patch(PolygonPatch(district_jersey[1]['geometry'], fc=GREEN, ec=BLACK, alpha=1, zorder=2))
+        
+        break;
+mplleaflet.display(fig=f) 
+```
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/heatmap2.png" width="800"></p>
+
+### 6 Summary and next steps
+You successfully completed this notebook! You learned how to use IBM Message Hub, Pandas, PixieDust as well as Mplleaflet for consuming, analysing and visualizing real-time system data.
+
+#### Next Steps
+Using historical bike sharing data and weather data for deeper insights.
