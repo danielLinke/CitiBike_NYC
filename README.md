@@ -26,7 +26,7 @@ This notebook contains the following parts:
 1.	[IBM Message Hub service](#1-ibm-message-hub-service)
 2.	[Produce real-time data into IBM Message Hub](#2-produce-real-time-data-into-ibm-message-hub)
 3.	[Consume real-time data from IBM Message Hub](#3-consume-real-time-data-from-ibm-message-hub)
-4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](4-explore-transform-and-analyze-real-time-data-with-ibm-data-science-experience)
+4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](#4-explore-transform-and-analyze-real-time-data-with-ibm-data-science-experience)
 5.	[Visualization of real-time system data](#visualization)
 6.  [Summary and next steps](#summary)
 
@@ -319,3 +319,144 @@ for msg in consumer:
 You will get insights into the provided bike sharing data of Citi Bike. You will analysis the capacity, availability and utilization of the bike sharing stations in New York City and New Jersey.
 
 ##### Analyze data in PixieDust
+
+##### Explore the schema and browse the data
+Select DataFrame Table icon in the display widget
+
+##### What are the current bike availability of the stations?
+Choose the Chart icon in the display widget and select `Histogram`. Click `Options`
+* Values = `num_bikes_available`
+
+##### How many bikes currently are available and rented in New York City and Jersey City
+Choose the Chart icon in the display widget and select `Bar chart`. Click `Options`
+* Keys = `name_y`
+* Values = `num_bikes_available`, `cacpacity`
+
+##### Visualize the bike availability of the stations on a map
+Choose the Chart icon in the display widget and select `Map`. Click `Options`
+* Keys = `lat`, `lon`
+* Values = `num_bikes_available`
+* Aggregation = `sum`
+
+##### Visualize the disabled bikes and docks on a map
+Choose the Chart icon in the display widget and select `Map`. Click `Options`
+* Keys = `lat`, `lon`
+* Values = `num_bikes_disabled`, `num_docks_disabled`
+* Aggregation = `sum`
+
+Render your map with `mapbox` and insert your own Mapbox access token into your options. You can get a free access token [here](https://www.mapbox.com/studio/account/tokens/)
+
+```
+from pixiedust.display import *
+
+#Display merged data with PixieDust
+display(df_merged)
+```
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/mapbox2.png" width="800"></p>
+
+### Histogram - Available Bikes (Animated Plot)
+In the following animated histogram, you can see the availibilty distribution of all bike sharing stations in real time. The diagram using real time system data from the IBM Message Hub service and will stop after 20 seconds. You can change the duration time of the animation with the parameter `timeout`.
+
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/histogram.png" width="500"></p>
+
+### Data Plots - Utilisation and Relations
+With the following figures, you can get an deeper insight of the bike sharing data. The figures showing an overview about the utilization for each district as well further statistical information about the stations in boxplots and different kind of scatterplots.
+
+```
+%matplotlib inline
+import matplotlib.pyplot as plt
+
+#Set Display size for output
+plt.rcParams["figure.figsize"] = [22, 20]
+
+#Set Subplot settings (3x3)
+fig, axes = plt.subplots(nrows=3, ncols=3)
+
+#Consume data from IBM Message Hub
+for msg in consumer:                 
+    if msg.topic == 'citibike':  
+        df_station_status = pd.DataFrame(_getJSONfromKafka(msg))
+        df_station_status = df_station_status.set_index('station_id')       
+        
+        #Merge data
+        df = pd.merge(df_station_data, df_station_status, how='inner', left_index=True, right_index=True)
+        df['utilization'] = (df.num_bikes_available / df.capacity)*100 
+        
+        #DataFrames grouped by district
+        df_overall = df.groupby(['region_id'])[['num_docks_available', 'num_bikes_available', 'num_bikes_disabled', 'num_docks_disabled', 'utilization']].mean()           
+            
+        #Boxplots
+        ax1 = df[['num_bikes_available', 'num_docks_available', 'capacity', 'utilization']].plot.box(vert=False, sym='r+', ax=axes[0,0])
+        ax1.set_title('Utilization', fontweight='bold')
+        ax1.set_xlabel('Percent [%]')
+        
+        #BarPlot - Overall utilization  
+        ax2 = df_overall[['num_docks_available', 'num_bikes_available', 'num_bikes_disabled', 'num_docks_disabled']].plot.bar(legend=True, stacked=False, ax=axes[0,1]) 
+        ax2.set_title('Overall utilization', fontweight='bold')
+        ax2.set_xticklabels(['Jersey', 'NYC'], rotation=0)
+        ax2.set_xlabel('Regions')
+        ax2.set_ylabel('Amount')
+    
+        #BarPlot - Realtive utilization
+        ax3 = df_overall['utilization'].plot.bar(legend=True, ax=axes[0,2]) 
+        ax3.set_title('Relative utilization', fontweight='bold') 
+        ax3.set_xticklabels(['Jersey', 'NYC'], rotation=0)
+        ax3.set_xlabel('Regions')
+        ax3.set_ylabel('Percent [%]')
+            
+        #Pie Chart - Number of Stations       
+        values = [3, 12] 
+        ax9 = df.region_id.value_counts().plot(kind='pie', autopct='%.2f', ax=axes[1,0], labels=['NYC', 'Jersey'], shadow=True)
+        ax9.set_title('Number of stations in each region ', fontweight='bold')
+        ax9.set_xlabel('Percent [%]')
+        ax9.set_ylabel('Regions')     
+               
+        #Scatter Plot - Latitiude
+        ax5 = df.plot.scatter('lat', 'utilization', c='blue', ax=axes[1,1])
+        ax5.set_title('Relation utilization and latidude', fontweight='bold')
+        
+        #Scatter Plot - Longitude
+        ax6 = df.plot.scatter('lon', 'utilization', c='blue', ax=axes[1,2])
+        ax6.set_title('Relation utilization and longitude', fontweight='bold')
+        
+        #Scatter Plot - Capacity
+        ax4 = df.plot.scatter('capacity', 'utilization', c='green', ax=axes[2,0])
+        ax4.set_title('Relation capacity and utilization', fontweight='bold') 
+        
+        #Scatter Plot - Key dispender
+        ax7 = df.plot.scatter('utilization', 'eightd_has_key_dispenser', c='black', ax=axes[2,1])
+        ax7.set_title('Relation utilization and eightd_has_key_dispenser', fontweight='bold')
+                
+        #Scatter Plot - Docks and Bikes
+        ax8 = df.plot.scatter('num_docks_available', 'num_bikes_available', c='red', ax=axes[2,2])       
+        ax8.set_title('Relation num_docks_available and num_bikes_available', fontweight='bold')
+        
+        break
+```
+
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/dataplots.png" width="800"></p>
+
+#### Correlations
+In the following table, you can see the correlation beetween all attributes of the bike sharing data. A correlation coefficient of 1 or -1 mean a high correlation beetween the attributes. A correlation coefficient around 0 stand for a low correlation.
+
+```
+%matplotlib inline
+import matplotlib.pyplot as plt
+import seaborn as sns
+            
+#Consume data from IBM Message Hub
+for msg in consumer:                 
+    if msg.topic == 'citibike':  
+        df_station_status = pd.DataFrame(_getJSONfromKafka(msg))
+        df_station_status = df_station_status.set_index('station_id')       
+        
+        #Merge data
+        df = pd.merge(df_station_data, df_station_status, how='inner', left_index=True, right_index=True)
+        df['utilization'] = (df.num_bikes_available / df.capacity)*100 
+        df_corr = df.corr()                
+        
+        #Display table
+        df_corr = df_corr.style.background_gradient(cmap=plt.get_cmap('coolwarm'), axis=1)       
+        break
+df_corr
+```
