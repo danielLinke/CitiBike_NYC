@@ -61,7 +61,7 @@ In this step, you will insert your service credentials from the IBM Message Hub 
 
 ```json
 credentials_1 = {
-  'instance_id':'fa0e5d69-995a-4281-ab1e-48fd017742c8',
+  \'instance_id\':\'fa0e5d69-995a-4281-ab1e-48fd017742c8\',
   'mqlight_lookup_url':'https://mqlight-lookup-prod01.messagehub.services.us-south.bluemix.net/Lookup?serviceId=fa0e5d69-995a-4281-ab1e-48fd017742c8',
   'api_key':'<your_api_key>',
   'kafka_admin_url':'https://kafka-admin-prod01.messagehub.services.us-south.bluemix.net:443',
