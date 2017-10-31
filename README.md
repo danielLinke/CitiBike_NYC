@@ -23,12 +23,12 @@ When the reader has completed this tutorial, they will understand how to:
 # Contents
 This notebook contains the following parts:
 
-1.	[IBM Message Hub service](#1-ibm-message-hub-service-)
-2.	[Produce real-time data into IBM Message Hub](#2-produce-real-time-data-into-ibm-message-hub-)
+1.	[IBM Message Hub service](#1-ibm-message-hub-service)
+2.	[Produce real-time data into IBM Message Hub](#2-produce-real-time-data-into-ibm-message-hub)
 3.	[Consume real-time data from IBM Message Hub](#3-consume-real-time-data-from-ibm-message-hub)
-4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](#4-explore,-transform-and-analyze-real-time-data-with-ibm-data-science-experience-)
-5.	[Visualization of real-time system data](#visualization-)
-6.  [Summary and next steps](#summary-)
+4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](4-explore-transform-and-analyze-real-time-data-with-ibm-data-science-experience)
+5.	[Visualization of real-time system data](#visualization)
+6.  [Summary and next steps](#summary)
 
 ## 1 IBM Message Hub service
 IBM Message Hub is a cloud service from Bluemix and based on Apache Kafka: a fast, scalable, and durable real-time messaging engine from the Apache Software Foundation. To understand the benefits of using Apache Kafka as a service, see [Message Hub: Apache Kafka as a Service](https://developer.ibm.com/messaging/2016/03/14/message-hub-apache-kafka-as-a-service/).
@@ -227,7 +227,7 @@ from pixiedust.display import *
 display(df_station_info)
 ```
 
-<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/mapbox.png" width="500"></p>
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/mapbox.png" width="800"></p>
 
 ### Explore - Station status (Animated Table)
 You can display your real-time system data from the IBM Message Hub in a animated table. The data will updated continously and will stop after 20 seconds. You can change the duration time of the animation with the parameter `timeout`.
