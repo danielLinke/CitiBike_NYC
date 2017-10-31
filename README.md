@@ -59,7 +59,7 @@ In this step, you will insert your service credentials from the IBM Message Hub 
 6. The new generated code should look like in the example below and contains the parameters `api_key`,`kafka_admin_url`, `kafka_broker_sasl`, `user` and `password`. The URLs may differ depending on your Bluemix region.
 
 
-`
+```
 credentials_1 = {
   'instance_id\':'fa0e5d69-995a-4281-ab1e-48fd017742c8',
   'mqlight_lookup_url':'https://mqlight-lookup-prod01.messagehub.services.us-south.bluemix.net/Lookup?serviceId=fa0e5d69-995a-4281-ab1e-48fd017742c8',
@@ -71,7 +71,7 @@ credentials_1 = {
   'password':'<your_password>',
   'topic':'citibike'
 }
-`
+```
 
 ## 2 Produce real-time data into IBM Message Hub <a name="producer"></a>
 In the next step, we will use an application to produce a real-time data stream into the IBM Message Hub service. The producer application is written in Java. In the scenario, the application read real-time system data from the [Citi bike feed](https://gbfs.citibikenyc.com/gbfs/gbfs.json) and send this datastream to the topic `citibike` into IBM's Message Hub service. For a deeper insight of the producer application. You can find source code and more in the Message Hub samples [here](https://github.com/danielLinke/message-hub-samples).
