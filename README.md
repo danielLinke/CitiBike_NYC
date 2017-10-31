@@ -569,7 +569,7 @@ for msg in consumer:
         break;
 mplleaflet.display(fig=f)
 ```
-<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/heatmap1.png" width="800"></p>
+<p align="left"><img src="https://github.com/danielLinke/CitiBike_NYC/blob/master/images/heatmap_available.png" width="800"></p>
 
 #### HeatMap - Utilization
 The following heat map shows the utilization for each bike station.
