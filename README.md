@@ -23,8 +23,8 @@ When the reader has completed this tutorial, they will understand how to:
 # Contents
 This notebook contains the following parts:
 
-1.	[IBM Message Hub service](#message-hub-)
-2.	[Produce real-time data into IBM Message Hub](#producer-)
+1.	[IBM Message Hub service](#1-ibm-message-hub-service-)
+2.	[Produce real-time data into IBM Message Hub](#2-produce-real-time-data-into-ibm-message-hub-)
 3.	[Consume real-time data from IBM Message Hub](#consumer-)
 4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](#analyze-)
 5.	[Visualization of real-time system data](#visualization-)
@@ -57,6 +57,7 @@ In this step, you will insert your service credentials from the IBM Message Hub 
 4. In the side bar on the right side, Click `Connections`
 5. You will see the service_name of your Message Hub instances. Click for your Service Hub instances `insert to code`.
 6. The new generated code should look like in the example below and contains the parameters `api_key`,`kafka_admin_url`, `kafka_broker_sasl`, `user` and `password`. The URLs may differ depending on your Bluemix region.
+
 
 ```json
 credentials_1 = {
