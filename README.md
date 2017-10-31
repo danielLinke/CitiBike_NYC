@@ -26,7 +26,7 @@ This notebook contains the following parts:
 1.	[IBM Message Hub service](#1-ibm-message-hub-service-)
 2.	[Produce real-time data into IBM Message Hub](#2-produce-real-time-data-into-ibm-message-hub-)
 3.	[Consume real-time data from IBM Message Hub](#3-consume-real-time-data-from-ibm-message-hub)
-4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](#analyze-)
+4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](#4-explore,-transform-and-analyze-real-time-data-with-ibm-data-science-experience-)
 5.	[Visualization of real-time system data](#visualization-)
 6.  [Summary and next steps](#summary-)
 
@@ -197,3 +197,125 @@ consumer = KafkaConsumer(bootstrap_servers = bootstrap_servers,
 #Set topic
 consumer.assign([TopicPartition('citibike', 0)])
 ```
+
+## 4 Explore, transform and analyze real-time data with IBM Data Science Experience
+In this section you will learn how to explore, tranform and analyze data with IBM Data Science Experience.
+
+### Data Exploration with PixieDust
+In the first step, you can explore your static and real time system data with the Python library PixieDust. This library PixieDust enabling you an deeper insight of the static data. You can inspect the data in a table, create diagrams like bar charts, histograms or scatter plots as well as interactive geo maps with information like the capacity of each station.
+
+#### Explorer - Station information
+##### Explore the schema and browse the data
+Select DataFrame Table icon in the display widget
+
+##### What are the capacities of the stations?
+Choose the Chart icon in the display widget and select and select `Histogram`. Click `Options`
+* Values = `capacity`
+
+##### Visualize the capacity of the stations on a map
+Choose the Chart icon in the display widget and select and select `Map`. Click `Options`
+* Keys = `lat`, `lon`
+* Values = `capacity`
+* Aggregation = `sum`
+
+Render your map with `mapbox` and insert your own Mapbox access token into your options. You can get a free access token [here](https://www.mapbox.com/studio/account/tokens/)
+
+```
+from pixiedust.display import *
+
+#Display station information with PixieDust
+display(df_station_info)
+```
+
+<p align="left"><img src="resources/architecture.png" width="500"></p>
+
+### Explore - Station status (Animated Table)
+You can display your real-time system data from the IBM Message Hub in a animated table. The data will updated continously and will stop after 20 seconds. You can change the duration time of the animation with the parameter `timeout`.
+
+```
+import time
+from IPython import display
+from random import randint
+
+df_station_status = None
+timeout = time.time() + 20   # 20 seconds from now
+       
+#Consume data from IBM Message Hub
+for msg in consumer:                 
+    if msg.topic == 'citibike':  
+        if df_station_status is None:
+            df_station_status = pd.DataFrame(_getJSONfromKafka(msg))
+            df_station_status = df_station_status.set_index('station_id')  
+        else:
+            #Update data
+            df_temp = pd.DataFrame(_getJSONfromKafka(msg))
+            df_temp = df_temp.set_index('station_id')  
+            #df_temp['num_bikes_available'] = randint(0, 99) #=>Test Interactive
+            df_station_status.update(df_temp, join = 'left', overwrite=True)
+
+        #Display station status
+        display.display(df_station_status.head(10))      
+        display.clear_output(wait=True)
+    
+        #Exit condition after 20 seconds
+        if time.time() > timeout: 
+            break
+ ```
+ 
+### Transform Data
+In this subsection you will learn how to merge Pandas data frame as preperation for following data analysis. You can find more infromation about structre and realtions of the data [here](https://github.com/NABSA/gbfs/blob/master/gbfs.md).
+
+#### Merge station information with regions in df_station_data
+First, you will merge the data frames station information and `system regions` to the data frame `df_station_data`. The data frames will merge via the attribute `region_id`.
+
+```
+#Convert region_id in string
+if df_station_info['region_id'].dtype == 'float64' or df_station_info['region_id'].dtype == 'int64':
+    df_station_info['region_id'] = df_station_info['region_id'].map(lambda x: "{:.0f}".format(x))
+    
+#Merge station_information with Regions
+df_station_data = pd.merge(df_station_info, df_system_regions, how='inner', left_on='region_id', right_index=True)
+df_station_data.head(10)
+```
+
+#### Merge station data with station status (Animated Table)
+First, you will merge the data frames `df_station_data` with the real time system data from IBM Message Hub via the attribute `station_id`.
+
+```
+import time
+import pylab as plt
+from pixiedust.display import *
+from IPython import display
+from random import randint
+
+df_station_status = None
+timeout = time.time() + 20 # 20 seconds from now
+    
+#Consume data from IBM Message Hub
+for msg in consumer:                 
+    if msg.topic == 'citibike':  
+        if df_station_status is None:
+            df_station_status = pd.DataFrame(_getJSONfromKafka(msg))
+            df_station_status = df_station_status.set_index('station_id')  
+        else:
+            #Update data
+            df_temp = pd.DataFrame(_getJSONfromKafka(msg))
+            df_temp = df_temp.set_index('station_id')  
+            #df_temp['num_bikes_available'] = randint(0, 99) #=>Test Interactive
+            df_station_status.update(df_temp, join = 'left', overwrite=True)
+            
+        df_merged = pd.merge(df_station_data, df_station_status, how='inner', left_index=True, right_index=True)
+            
+        #Display merged table
+        display.display(df_merged.head(15))      
+        display.clear_output(wait=True)
+                   
+        #Exit condition after 20 seconds
+        if time.time() > timeout: 
+            break
+```
+
+#### Analyze Data
+You will get insights into the provided bike sharing data of Citi Bike. You will analysis the capacity, availability and utilization of the bike sharing stations in New York City and New Jersey.
+
+##### Analyze data in PixieDust
