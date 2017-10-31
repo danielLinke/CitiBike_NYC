@@ -28,7 +28,7 @@ This notebook contains the following parts:
 3.	[Consume real-time data from IBM Message Hub](#3-consume-real-time-data-from-ibm-message-hub)
 4.  [Explore, transform and analyze real-time data with IBM Data Science Experience](#4-explore-transform-and-analyze-real-time-data-with-ibm-data-science-experience)
 5.	[Visualization of real-time system data](#5-visualization-of-real-time-system-data)
-6.  [Summary and next steps](#summary)
+6.  [Summary and next steps](#6-summary-and-next-steps)
 
 ## 1 IBM Message Hub service
 IBM Message Hub is a cloud service from Bluemix and based on Apache Kafka: a fast, scalable, and durable real-time messaging engine from the Apache Software Foundation. To understand the benefits of using Apache Kafka as a service, see [Message Hub: Apache Kafka as a Service](https://developer.ibm.com/messaging/2016/03/14/message-hub-apache-kafka-as-a-service/).
